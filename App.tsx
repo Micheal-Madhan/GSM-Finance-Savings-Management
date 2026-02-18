@@ -244,7 +244,7 @@ const Layout = ({ data, children }: { data: any, children?: React.ReactNode }) =
       <aside className={`fixed inset-y-0 left-0 w-64 glass-card border-r border-slate-200 z-50 transform transition-transform duration-300 lg:translate-x-0 rounded-none ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-full flex flex-col p-6">
           <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black">G</div>
+            <div className="w-14 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xs tracking-tighter">GSM</div>
             <span className="font-bold text-lg text-slate-900">Finance</span>
             <button className="lg:hidden p-1 text-slate-400 ml-auto" onClick={() => setSidebarOpen(false)}><X className="w-6 h-6" /></button>
           </div>
