@@ -165,7 +165,7 @@ const LoginPage = ({ data }: { data: any }) => {
     <div className={`min-h-screen flex items-center justify-center p-6 ${data.lang === 'ta' ? 'font-tamil' : ''}`}>
       <div className="w-full max-w-sm glass-card p-8 space-y-8 animate-slide-up">
         <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl font-black shadow-lg mb-6">GSM</div>
+          <div className="mx-auto w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg mb-6 tracking-tighter">GSM</div>
           <h1 className="text-2xl font-bold text-slate-900">{data.t('login')}</h1>
           <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-widest mt-1">Enterprise Finance</p>
         </div>
