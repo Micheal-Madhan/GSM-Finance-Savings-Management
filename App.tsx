@@ -663,9 +663,49 @@ const AddUserView = ({ data }: { data: any }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validatePhone(formData.phone)) { setPhoneError(data.t('invalidPhone')); return; }
-    const count = data.schemeUsers.filter((u: any) => u.schemeType === formData.schemeType).length + 1;
     const prefix = formData.schemeType === 'KHSS' ? 'KHSS' : formData.schemeType === 'DSS' ? 'DSS' : 'FIN';
-    const uniqueId = `GSM-${prefix}-${count.toString().padStart(3, '0')}`;
+    const localCount = data.schemeUsers.filter((u: any) => u.schemeType === formData.schemeType).length + 1;
+    let uniqueId = `GSM-${prefix}-${localCount.toString().padStart(3, '0')}`;
+    // Save to Supabase table
+    let supabaseTable = '';
+    if (formData.schemeType === 'KHSS') supabaseTable = 'KolliHills_Scheme_Table';
+    else if (formData.schemeType === 'DSS') supabaseTable = 'Diwali_Scheme_Table';
+    if (supabaseTable) {
+      try {
+        let generatedId: string | null = null;
+        if (formData.schemeType === 'KHSS') {
+          const { data: id, error } = await supabase.rpc('create_khss_scheme', {
+            p_customer_name: formData.name,
+            p_phone_number: formData.phone,
+            p_address: formData.address,
+            p_total_amount: parseFloat(formData.totalAmount),
+            p_number_of_schemes: parseInt(formData.numSchemes),
+            p_created_by: data.currentUser?.Username || data.currentUser?.username || null
+          });
+          if (error?.code === 'PGRST202') throw new Error('Sequential ID generation is not enabled in Supabase. Run supabase/atomic_scheme_ids.sql in the Supabase SQL Editor, then retry.');
+          if (error) throw error;
+          generatedId = id;
+        } else if (formData.schemeType === 'DSS') {
+          const { data: id, error } = await supabase.rpc('create_dss_scheme', {
+            p_customer_name: formData.name,
+            p_phone_number: formData.phone,
+            p_address: formData.address,
+            p_total_amount: parseFloat(formData.totalAmount),
+            p_number_of_schemes: parseInt(formData.numSchemes),
+            p_item_selection: formData.selectedItem,
+            p_created_by: data.currentUser?.Username || data.currentUser?.username || null
+          });
+          if (error?.code === 'PGRST202') throw new Error('Sequential ID generation is not enabled in Supabase. Run supabase/atomic_scheme_ids.sql in the Supabase SQL Editor, then retry.');
+          if (error) throw error;
+          generatedId = id;
+        }
+        if (!generatedId) throw new Error('The database did not return a generated ID.');
+        uniqueId = generatedId;
+      } catch (err: any) {
+        setNotification({ message: data.t('error') + ': ' + (err.message || 'Unknown error'), type: 'error' });
+        return;
+      }
+    }
     const newUser: SchemeUser = {
       id: uniqueId,
       name: formData.name,
@@ -679,48 +719,6 @@ const AddUserView = ({ data }: { data: any }) => {
       paymentHistory: [],
       createdAt: new Date().toISOString()
     };
-    // Save to Supabase table
-    let supabaseTable = '';
-    if (formData.schemeType === 'KHSS') supabaseTable = 'KolliHills_Scheme_Table';
-    else if (formData.schemeType === 'DSS') supabaseTable = 'Diwali_Scheme_Table';
-    if (supabaseTable) {
-      try {
-        let insertObj: any = {};
-        if (formData.schemeType === 'KHSS') {
-          insertObj = {
-            KHSS_ID: uniqueId,
-            CustomerName: formData.name,
-            PhoneNumber: formData.phone,
-            Address: formData.address,
-            TotalAmount: parseFloat(formData.totalAmount),
-            NumberOfSchemes: parseInt(formData.numSchemes),
-            CreatedDate: new Date().toISOString(),
-            CreatedBy: data.currentUser?.Username || data.currentUser?.username || null
-          };
-        } else if (formData.schemeType === 'DSS') {
-          insertObj = {
-            DSS_ID: uniqueId,
-            CustomerName: formData.name,
-            PhoneNumber: formData.phone,
-            Address: formData.address,
-            TotalAmount: parseFloat(formData.totalAmount),
-            NumberOfSchemes: parseInt(formData.numSchemes),
-            ItemSelection: formData.selectedItem,
-            CreatedAt: new Date().toISOString(),
-            CreatedDate: new Date().toISOString(),
-            CreatedBy: data.currentUser?.Username || data.currentUser?.username || null
-          };
-        }
-        const { error } = await supabase.from(supabaseTable).insert([insertObj]);
-        if (error) {
-          setNotification({ message: data.t('error') + ': ' + error.message, type: 'error' });
-          return;
-        }
-      } catch (err: any) {
-        setNotification({ message: data.t('error') + ': ' + (err.message || 'Unknown error'), type: 'error' });
-        return;
-      }
-    }
     data.setSchemeUsers([...data.schemeUsers, newUser]);
     setNotification({ message: `${data.t('success')} ID: ${uniqueId}`, type: 'success' });
     setFormData({ name: '', phone: '', address: '', totalAmount: '0', numSchemes: '1', schemeType: 'KHSS', selectedItem: 'Copper Kudam' });
